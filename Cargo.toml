@@ -11,3 +11,4 @@ pathfinding = "4.*"
 
 [dev-dependencies]
 macroquad = "0.4.5"
+tiled = "0.11.2"

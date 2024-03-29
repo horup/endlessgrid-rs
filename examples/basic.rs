@@ -1,11 +1,11 @@
 use std::time::Instant;
 
-use infgrid::*;
+use egrid::*;
 
 fn main() {
-    let mut grid = InfGrid::default() as InfGrid<i32>;
+    let mut grid = EGrid::default() as EGrid<i32>;
     let instant = Instant::now();
-    let size = 4000;
+    let size = 1024;
     for y in -size..size {
         for x in -size..size {
             grid.insert([x, y], 0);

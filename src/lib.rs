@@ -3,11 +3,11 @@ use std::collections::HashMap;
 pub const CHUNK_SIZE:usize = 16;
 
 #[derive(PartialEq, Eq, Debug, Hash, Clone, Copy)]
-pub struct InfIndex {
+pub struct EIndex {
     x:u32,
     y:u32
 }
-impl From<(i32, i32)> for InfIndex {
+impl From<(i32, i32)> for EIndex {
     fn from(value: (i32, i32)) -> Self {
         Self {
             x:(i32::MAX as i64 + 1 + value.0 as i64) as u32, 
@@ -15,15 +15,15 @@ impl From<(i32, i32)> for InfIndex {
         }
     }
 }
-impl From<[i32;2]> for InfIndex {
+impl From<[i32;2]> for EIndex {
     fn from(value: [i32;2]) -> Self {
         let tuple = (value[0], value[1]);
         tuple.into()
     }
 }
-impl InfIndex {
-    pub fn chunk_index(&self) -> InfIndex {
-        InfIndex { x: self.x / CHUNK_SIZE as u32, y: self.y / CHUNK_SIZE as u32 }
+impl EIndex {
+    pub fn chunk_index(&self) -> EIndex {
+        EIndex { x: self.x / CHUNK_SIZE as u32, y: self.y / CHUNK_SIZE as u32 }
     }
     pub fn local_index(&self) -> usize {
         let x = self.x as usize % CHUNK_SIZE;
@@ -32,14 +32,15 @@ impl InfIndex {
     }
 }
 
+/// An endless 2D grid of type `T`
 #[derive(Default)]
-pub struct InfGrid<T> {
-    pub chunks:HashMap<InfIndex, Vec<Option<T>>>
+pub struct EGrid<T> {
+    pub chunks:HashMap<EIndex, Vec<Option<T>>>
 }
 
-impl<T:Clone> InfGrid<T> {
-    pub fn get(&self, index:impl Into<InfIndex>) -> Option<&T> {
-        let index:InfIndex = index.into();
+impl<T:Clone> EGrid<T> {
+    pub fn get(&self, index:impl Into<EIndex>) -> Option<&T> {
+        let index:EIndex = index.into();
         let chunk_index = index.chunk_index();
         let chunk = self.chunks.get(&chunk_index)?;
         let cell = chunk.get(index.local_index())?;
@@ -47,8 +48,8 @@ impl<T:Clone> InfGrid<T> {
         Some(cell)
     }
 
-    pub fn get_mut(&mut self, index:impl Into<InfIndex>) -> Option<&mut T> {
-        let index:InfIndex = index.into();
+    pub fn get_mut(&mut self, index:impl Into<EIndex>) -> Option<&mut T> {
+        let index:EIndex = index.into();
         let chunk_index = index.chunk_index();
         let chunk = self.chunks.get_mut(&chunk_index)?;
         let cell = chunk.get_mut(index.local_index())?;
@@ -56,8 +57,8 @@ impl<T:Clone> InfGrid<T> {
         Some(cell)
     }
 
-    pub fn insert(&mut self, index:impl Into<InfIndex>, t:T) {
-        let index:InfIndex = index.into();
+    pub fn insert(&mut self, index:impl Into<EIndex>, t:T) {
+        let index:EIndex = index.into();
         let chunk_index = index.chunk_index();
         let chunk = match self.chunks.get_mut(&chunk_index) {
             Some(chunk) => chunk,
@@ -79,33 +80,33 @@ mod tests {
 
     #[test]
     fn infindex() {
-        let p1:InfIndex = [0, 0].into();
-        let p2:InfIndex = (0, 0).into();
+        let p1:EIndex = [0, 0].into();
+        let p2:EIndex = (0, 0).into();
         assert_eq!(p1, p2);
-        let p1:InfIndex = [5, 3].into();
-        let p2:InfIndex = (5, 3).into();
+        let p1:EIndex = [5, 3].into();
+        let p2:EIndex = (5, 3).into();
         assert_eq!(p1, p2);
-        let p1:InfIndex = [1, 2].into();
-        let p2:InfIndex = (2, 1).into();
+        let p1:EIndex = [1, 2].into();
+        let p2:EIndex = (2, 1).into();
         assert_ne!(p1, p2);
-        let p1:InfIndex = [i32::MIN, i32::MAX].into();
-        let p2:InfIndex = (i32::MIN, i32::MAX).into();
+        let p1:EIndex = [i32::MIN, i32::MAX].into();
+        let p2:EIndex = (i32::MIN, i32::MAX).into();
         assert_eq!(p1, p2);
 
-        let p1:InfIndex = [0, 0].into();
-        let p2:InfIndex = [15, 15].into();
+        let p1:EIndex = [0, 0].into();
+        let p2:EIndex = [15, 15].into();
         assert_ne!(p1, p2);
         assert_eq!(p1.chunk_index(), p2.chunk_index());
 
-        let p1:InfIndex = [-7, -7].into();
-        let p2:InfIndex = [-9, -9].into();
+        let p1:EIndex = [-7, -7].into();
+        let p2:EIndex = [-9, -9].into();
         assert_ne!(p1, p2);
         assert_eq!(p1.chunk_index(), p2.chunk_index());
     }
 
     #[test]
     fn test() {
-        let mut grid = InfGrid::default() as InfGrid<(i32, i32)>;
+        let mut grid = EGrid::default() as EGrid<(i32, i32)>;
         let size = 64;
         for y in -size..size {
             for x in -size..size {

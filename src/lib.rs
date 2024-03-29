@@ -52,6 +52,8 @@ pub struct ERay {
 /// An endless 2D grid of type `T`
 #[derive(Default)]
 pub struct EGrid<T> {
+    pub top_left:IVec2,
+    pub bottom_right:IVec2,
     pub chunks: HashMap<EIndex, Vec<Option<T>>>,
 }
 

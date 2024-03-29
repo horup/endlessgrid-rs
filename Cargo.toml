@@ -8,3 +8,6 @@ edition = "2021"
 [dependencies]
 glam = "0.*"
 pathfinding = "4.*"
+
+[dev-dependencies]
+macroquad = "0.4.5"

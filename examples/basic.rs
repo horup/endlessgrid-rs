@@ -22,3 +22,5 @@ fn main() {
     }
     println!("Took {}micro to set", (Instant::now() - instant).as_micros());
 }
+
+//http://www.adammil.net/blog/v125_roguelike_vision_algorithms.htm#raycast

@@ -1,5 +1,7 @@
 use std::collections::HashMap;
 
+use glam::{IVec2, Vec2};
+
 pub const CHUNK_SIZE:usize = 16;
 
 #[derive(PartialEq, Eq, Debug, Hash, Clone, Copy)]
@@ -21,6 +23,13 @@ impl From<[i32;2]> for EIndex {
         tuple.into()
     }
 }
+impl From<IVec2> for EIndex {
+    fn from(value: IVec2) -> Self {
+        let tuple = (value.x, value.y);
+        tuple.into()
+    }
+}
+
 impl EIndex {
     pub fn chunk_index(&self) -> EIndex {
         EIndex { x: self.x / CHUNK_SIZE as u32, y: self.y / CHUNK_SIZE as u32 }
@@ -30,6 +39,11 @@ impl EIndex {
         let y = self.y as usize % CHUNK_SIZE;
         y * CHUNK_SIZE + x
     }
+}
+
+pub struct ERay {
+    pub origin:Vec2,
+    pub dir:Vec2
 }
 
 /// An endless 2D grid of type `T`
@@ -72,11 +86,20 @@ impl<T:Clone> EGrid<T> {
             *cell = Some(t);
         }
     }
+
+    pub fn cast_ray<F>(&self, visit:F, ray:&ERay) where F:Fn()->bool {
+        
+    }
+
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn raycast_test() {
+    }
 
     #[test]
     fn infindex() {

@@ -1,7 +1,8 @@
-use std::collections::HashMap;
+use std::{collections::HashMap, f32::consts::PI, time::Instant};
 
 use egrid::*;
-use macroquad::prelude::*;
+use ::glam::Vec2;
+use macroquad::{prelude::*};
 use slotmap::{DefaultKey, SlotMap};
 use tiled::Loader;
 #[derive(Default, Clone)]
@@ -79,7 +80,6 @@ fn draw_atlas(texture:&Texture2D, x:f32, y:f32, index:f32, color:Color, tile_siz
 }
 
 fn move_entity(entity:DefaultKey, to:(i32, i32), grid:&mut EGrid<Tile>, entities:&mut SlotMap<DefaultKey, Entity>) {
-    
     let entity_key = entity;
     let Some(entity) = entities.get_mut(entity_key) else { return };
     let Some(to_tile) = grid.get_mut(to) else { return };
@@ -93,23 +93,28 @@ fn move_entity(entity:DefaultKey, to:(i32, i32), grid:&mut EGrid<Tile>, entities
 
 }
 
-fn input(player_entity:DefaultKey, grid:&mut EGrid<Tile>, entities:&mut SlotMap<DefaultKey, Entity>) {
+fn input(player_entity:DefaultKey, grid:&mut EGrid<Tile>, entities:&mut SlotMap<DefaultKey, Entity>, instant:&mut Instant) {
+    if (Instant::now() - *instant).as_millis() < 100 {
+        return;
+    }
+    
     let Some(entity) = entities.get(player_entity) else { return };
     let mut pos = entity.pos;
-    if is_key_pressed(KeyCode::W) {
+    if is_key_down(KeyCode::W) {
         pos.y -= 1;
     }
-    if is_key_pressed(KeyCode::S) {
+    else if is_key_down(KeyCode::S) {
         pos.y += 1;
     }
-    if is_key_pressed(KeyCode::A) {
+    else if is_key_down(KeyCode::A) {
         pos.x -= 1;
     }
-    if is_key_pressed(KeyCode::D) {
+    else if is_key_down(KeyCode::D) {
         pos.x += 1;
     }
 
     if pos != entity.pos {
+        *instant = Instant::now();
         move_entity(player_entity, (pos.x, pos.y), grid, entities);
     }
 }
@@ -123,20 +128,53 @@ async fn main() {
     let tile_size_px = 8.0;
     let tilemap_texture = load_texture("examples/tileset.png").await.unwrap();
     tilemap_texture.set_filter(FilterMode::Nearest);
+    let mut instant = Instant::now();
     loop {
-        input(player_entity, &mut grid, &mut entities);
+        input(player_entity, &mut grid, &mut entities, &mut instant);
         let zoom = 4.0;
+       
+        clear_background(WHITE);
+        let view_distance = 16.0;
+
+        let player_pos = entities.get(player_entity).unwrap().pos;
+        let player_pos = (player_pos.x, player_pos.y);
+
         let camera = Camera2D {
-            zoom:Vec2::new(zoom / screen_width(), zoom / screen_height()),
+            target:macroquad::prelude::Vec2::new(player_pos.0 as f32 * tile_size_px, player_pos.1 as f32 * tile_size_px),
+            zoom:macroquad::prelude::Vec2::new(zoom / screen_width(), zoom / screen_height()),
             ..Default::default()
         };
         set_camera(&camera);
-        clear_background(WHITE);
-        let view_distance = 32;
 
-        let player_pos = (16, 16);
+        let mut tiles = HashMap::new();
+        let r = 512;
+        for a in 0..r {
+            let a =  a as f32 / r as f32 * PI * 2.0;
+            let start = Vec2::new(player_pos.0 as f32 + 0.5, player_pos.1 as f32 + 0.5);
+            let v = Vec2::new(a.cos(), a.sin());
+            let end = v * view_distance + start;
 
-        for y in (player_pos.1 - view_distance)..(player_pos.1 + view_distance) {
+            grid.cast_ray(start, end, |x|{
+                tiles.insert(x.index, ());
+                if x.cell.solid {
+                    return true;
+                }
+
+                return false;
+            });
+        }
+
+        for (x,y) in tiles.keys() {
+            let Some(tile) = grid.get((*x,*y)) else {continue;};
+            let x = *x as f32 * tile_size_px;
+            let y = *y as f32 * tile_size_px;
+            draw_atlas(&tilemap_texture, x, y, tile.index as f32, WHITE, tile_size_px);
+            for entity in tile.entities.keys() {
+                let Some(entity) = entities.get(*entity) else { continue;};
+                draw_atlas(&tilemap_texture, x, y, entity.index as f32, WHITE, tile_size_px);
+            }
+        }
+        /*for y in (player_pos.1 - view_distance)..(player_pos.1 + view_distance) {
             for x in (player_pos.0 - view_distance)..(player_pos.0 + view_distance) {
                 if let Some(tile) = grid.get((x, y)) {
                     let x = x as f32 * tile_size_px;
@@ -148,7 +186,7 @@ async fn main() {
                     }
                 }
             }
-        }
+        }*/
         next_frame().await
     }
 }

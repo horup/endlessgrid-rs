@@ -1,10 +1,11 @@
 use std::collections::HashMap;
 
 use egrid::*;
-use macroquad::prelude::*;
+use macroquad::{miniquad::MipmapFilterMode, prelude::*};
 use tiled::Loader;
 #[derive(Default, Clone)]
 struct Tile {
+    pub index:u16,
     pub blocks_los: bool,
 }
 
@@ -31,6 +32,7 @@ fn load_map(grid:&mut EGrid<Tile>) {
                         let classes = classes.split(" ").map(|x|(x.to_owned(), ()));
                         let classes:HashMap<String,()> = classes.collect();
                         grid.insert(tile_pos, Tile {
+                            index:tile.id() as u16,
                             blocks_los:classes.contains_key("solid")
                         });
                     }
@@ -40,34 +42,54 @@ fn load_map(grid:&mut EGrid<Tile>) {
     }
 }
 
+fn draw_atlas(texture:&Texture2D, x:f32, y:f32, index:f32, color:Color, tile_size:f32) {
+    let nx = texture.width() / tile_size;
+    let ny = texture.height() / tile_size;
+    let index = index as u16;
+
+    let sx = index % nx as u16;
+    let sy = index / ny as u16;
+    let sx = sx as f32 * tile_size;
+    let sy = sy as f32 * tile_size;
+    draw_texture_ex(texture, x, y, color, DrawTextureParams {
+        dest_size:Some((tile_size, tile_size).into()),
+        source:Some(Rect::new(sx, sy, tile_size, tile_size)),
+        ..Default::default()
+    });
+}
+
 #[macroquad::main("Roguelike")]
 async fn main() {
     let mut grid = EGrid::default() as EGrid<Tile>;
     load_map(&mut grid);
+    let tile_size_px = 8.0;
+    let tilemap_texture = load_texture("examples/tileset.png").await.unwrap();
+    tilemap_texture.set_filter(FilterMode::Nearest);
     loop {
-        let zoom = 2.0;
+        let zoom = 4.0;
         let camera = Camera2D {
             zoom:Vec2::new(zoom / screen_width(), zoom / screen_height()),
             ..Default::default()
         };
         set_camera(&camera);
-        clear_background(BLACK);
+        clear_background(WHITE);
         let view_distance = 32;
 
         let player_pos = (16, 16);
 
-        let tile_size_px = 16.0;
         for y in (player_pos.1 - view_distance)..(player_pos.1 + view_distance) {
             for x in (player_pos.0 - view_distance)..(player_pos.0 + view_distance) {
                 if let Some(tile) = grid.get((x, y)) {
-                    let color = if tile.blocks_los { WHITE } else { GRAY };
-                    draw_rectangle(
+                    /*draw_rectangle(
                         x as f32 * tile_size_px,
                         y as f32 * tile_size_px,
                         tile_size_px as f32,
                         tile_size_px as f32,
                         color,
-                    );
+                    );*/
+                    let x = x as f32 * tile_size_px;
+                    let y = y as f32 * tile_size_px;
+                    draw_atlas(&tilemap_texture, x, y, tile.index as f32, WHITE, tile_size_px);
                 }
             }
         }

@@ -1,9 +1,11 @@
+use std::collections::HashMap;
+
 use egrid::*;
 use macroquad::prelude::*;
 use tiled::Loader;
 #[derive(Default, Clone)]
 struct Tile {
-    pub blocks: bool,
+    pub blocks_los: bool,
 }
 
 
@@ -25,8 +27,11 @@ fn load_map(grid:&mut EGrid<Tile>) {
                             chunk_pos.0 * tiled::ChunkData::WIDTH as i32 + x,
                             chunk_pos.1 * tiled::ChunkData::HEIGHT as i32 + y,
                         );
+                        let classes = tile.get_tile().unwrap().user_type.clone().unwrap_or_default();
+                        let classes = classes.split(" ").map(|x|(x.to_owned(), ()));
+                        let classes:HashMap<String,()> = classes.collect();
                         grid.insert(tile_pos, Tile {
-                            blocks:false
+                            blocks_los:classes.contains_key("solid")
                         });
                     }
                 }
@@ -55,7 +60,7 @@ async fn main() {
         for y in (player_pos.1 - view_distance)..(player_pos.1 + view_distance) {
             for x in (player_pos.0 - view_distance)..(player_pos.0 + view_distance) {
                 if let Some(tile) = grid.get((x, y)) {
-                    let color = if tile.blocks { WHITE } else { GRAY };
+                    let color = if tile.blocks_los { WHITE } else { GRAY };
                     draw_rectangle(
                         x as f32 * tile_size_px,
                         y as f32 * tile_size_px,

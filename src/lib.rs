@@ -5,11 +5,11 @@ use glam::{IVec2, Vec2};
 pub const CHUNK_SIZE: usize = 16;
 
 #[derive(PartialEq, Eq, Debug, Hash, Clone, Copy)]
-pub struct EIndex {
+pub struct Index {
     x: u32,
     y: u32,
 }
-impl From<(i32, i32)> for EIndex {
+impl From<(i32, i32)> for Index {
     fn from(value: (i32, i32)) -> Self {
         Self {
             x: (i32::MAX as i64 + 1 + value.0 as i64) as u32,
@@ -17,22 +17,22 @@ impl From<(i32, i32)> for EIndex {
         }
     }
 }
-impl From<[i32; 2]> for EIndex {
+impl From<[i32; 2]> for Index {
     fn from(value: [i32; 2]) -> Self {
         let tuple = (value[0], value[1]);
         tuple.into()
     }
 }
-impl From<IVec2> for EIndex {
+impl From<IVec2> for Index {
     fn from(value: IVec2) -> Self {
         let tuple = (value.x, value.y);
         tuple.into()
     }
 }
 
-impl EIndex {
-    pub fn chunk_index(&self) -> EIndex {
-        EIndex {
+impl Index {
+    pub fn chunk_index(&self) -> Index {
+        Index {
             x: self.x / CHUNK_SIZE as u32,
             y: self.y / CHUNK_SIZE as u32,
         }
@@ -44,17 +44,17 @@ impl EIndex {
     }
 }
 
-pub struct ERay {
+pub struct Ray {
     pub origin: Vec2,
     pub dir: Vec2,
 }
 
-/// An endless 2D grid of type `T`
+/// An endless 2D grid of type `T` implemented using 16x16 chunks
 #[derive(Default)]
-pub struct EGrid<T> {
+pub struct Grid<T> {
     pub top_left:IVec2,
     pub bottom_right:IVec2,
-    pub chunks: HashMap<EIndex, Vec<Option<T>>>,
+    pub chunks: HashMap<Index, Vec<Option<T>>>,
 }
 
 pub struct Visit<'a, T> {
@@ -65,9 +65,9 @@ pub struct Visit<'a, T> {
     pub d:f32
 }
 
-impl<T: Clone> EGrid<T> {
-    pub fn get(&self, index: impl Into<EIndex>) -> Option<&T> {
-        let index: EIndex = index.into();
+impl<T: Clone> Grid<T> {
+    pub fn get(&self, index: impl Into<Index>) -> Option<&T> {
+        let index: Index = index.into();
         let chunk_index = index.chunk_index();
         let chunk = self.chunks.get(&chunk_index)?;
         let cell = chunk.get(index.local_index())?;
@@ -75,8 +75,8 @@ impl<T: Clone> EGrid<T> {
         Some(cell)
     }
 
-    pub fn get_mut(&mut self, index: impl Into<EIndex>) -> Option<&mut T> {
-        let index: EIndex = index.into();
+    pub fn get_mut(&mut self, index: impl Into<Index>) -> Option<&mut T> {
+        let index: Index = index.into();
         let chunk_index = index.chunk_index();
         let chunk = self.chunks.get_mut(&chunk_index)?;
         let cell = chunk.get_mut(index.local_index())?;
@@ -84,8 +84,8 @@ impl<T: Clone> EGrid<T> {
         Some(cell)
     }
 
-    pub fn insert(&mut self, index: impl Into<EIndex>, t: T) {
-        let index: EIndex = index.into();
+    pub fn insert(&mut self, index: impl Into<Index>, t: T) {
+        let index: Index = index.into();
         let chunk_index = index.chunk_index();
         let chunk = match self.chunks.get_mut(&chunk_index) {
             Some(chunk) => chunk,
@@ -191,33 +191,33 @@ mod tests {
 
     #[test]
     fn infindex() {
-        let p1: EIndex = [0, 0].into();
-        let p2: EIndex = (0, 0).into();
+        let p1: Index = [0, 0].into();
+        let p2: Index = (0, 0).into();
         assert_eq!(p1, p2);
-        let p1: EIndex = [5, 3].into();
-        let p2: EIndex = (5, 3).into();
+        let p1: Index = [5, 3].into();
+        let p2: Index = (5, 3).into();
         assert_eq!(p1, p2);
-        let p1: EIndex = [1, 2].into();
-        let p2: EIndex = (2, 1).into();
+        let p1: Index = [1, 2].into();
+        let p2: Index = (2, 1).into();
         assert_ne!(p1, p2);
-        let p1: EIndex = [i32::MIN, i32::MAX].into();
-        let p2: EIndex = (i32::MIN, i32::MAX).into();
+        let p1: Index = [i32::MIN, i32::MAX].into();
+        let p2: Index = (i32::MIN, i32::MAX).into();
         assert_eq!(p1, p2);
 
-        let p1: EIndex = [0, 0].into();
-        let p2: EIndex = [15, 15].into();
+        let p1: Index = [0, 0].into();
+        let p2: Index = [15, 15].into();
         assert_ne!(p1, p2);
         assert_eq!(p1.chunk_index(), p2.chunk_index());
 
-        let p1: EIndex = [-7, -7].into();
-        let p2: EIndex = [-9, -9].into();
+        let p1: Index = [-7, -7].into();
+        let p2: Index = [-9, -9].into();
         assert_ne!(p1, p2);
         assert_eq!(p1.chunk_index(), p2.chunk_index());
     }
 
     #[test]
     fn test() {
-        let mut grid = EGrid::default() as EGrid<(i32, i32)>;
+        let mut grid = Grid::default() as Grid<(i32, i32)>;
         let size = 64;
         for y in -size..size {
             for x in -size..size {

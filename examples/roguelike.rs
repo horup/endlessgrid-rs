@@ -1,6 +1,6 @@
 use std::{collections::HashMap, f32::consts::PI, time::Instant};
 
-use egrid::*;
+use chunkgrid::*;
 use ::glam::Vec2;
 use macroquad::{prelude::*};
 use slotmap::{DefaultKey, SlotMap};
@@ -20,7 +20,7 @@ pub struct Entity {
 }
 
 
-fn load_map(grid:&mut EGrid<Tile>, entities:&mut SlotMap<DefaultKey, Entity>) {
+fn load_map(grid:&mut Grid<Tile>, entities:&mut SlotMap<DefaultKey, Entity>) {
     let mut loader = Loader::new();
     let map = loader.load_tmx_map("examples/roguelike.tmx").unwrap();
     for layer in map.layers() {
@@ -79,7 +79,7 @@ fn draw_atlas(texture:&Texture2D, x:f32, y:f32, index:f32, color:Color, tile_siz
     });
 }
 
-fn move_entity(entity:DefaultKey, to:(i32, i32), grid:&mut EGrid<Tile>, entities:&mut SlotMap<DefaultKey, Entity>) {
+fn move_entity(entity:DefaultKey, to:(i32, i32), grid:&mut Grid<Tile>, entities:&mut SlotMap<DefaultKey, Entity>) {
     let entity_key = entity;
     let Some(entity) = entities.get_mut(entity_key) else { return };
     let Some(to_tile) = grid.get_mut(to) else { return };
@@ -93,7 +93,7 @@ fn move_entity(entity:DefaultKey, to:(i32, i32), grid:&mut EGrid<Tile>, entities
 
 }
 
-fn input(player_entity:DefaultKey, grid:&mut EGrid<Tile>, entities:&mut SlotMap<DefaultKey, Entity>, instant:&mut Instant) {
+fn input(player_entity:DefaultKey, grid:&mut Grid<Tile>, entities:&mut SlotMap<DefaultKey, Entity>, instant:&mut Instant) {
     if (Instant::now() - *instant).as_millis() < 100 {
         return;
     }
@@ -122,7 +122,7 @@ fn input(player_entity:DefaultKey, grid:&mut EGrid<Tile>, entities:&mut SlotMap<
 #[macroquad::main("Roguelike")]
 async fn main() {
     let mut entities = SlotMap::default();
-    let mut grid = EGrid::default() as EGrid<Tile>;
+    let mut grid = Grid::default() as Grid<Tile>;
     load_map(&mut grid, &mut entities);
     let player_entity = entities.iter().filter(|x|x.1.is_player).next().expect("player not ofund").0;
     let tile_size_px = 8.0;

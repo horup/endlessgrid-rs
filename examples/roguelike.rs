@@ -1,6 +1,6 @@
 use std::{collections::HashMap, f32::consts::PI, time::Instant};
 
-use chunkgrid::*;
+use endlessgrid::*;
 use ::glam::Vec2;
 use macroquad::{prelude::*};
 use slotmap::{DefaultKey, SlotMap};

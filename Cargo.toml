@@ -6,10 +6,12 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-glam = "0.*"
-pathfinding = "4.*"
+glam = "0"
+pathfinding = "4"
+serde = {version = "1", features = ["derive"]}
 
 [dev-dependencies]
 macroquad = "0.4.5"
 tiled = "0.11.2"
 slotmap = "1.0"
+bincode = "1.3.3"

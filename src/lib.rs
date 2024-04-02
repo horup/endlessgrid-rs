@@ -1,8 +1,9 @@
 use std::collections::HashMap;
 use glam::Vec2;
+use serde::{Deserialize, Serialize};
 pub const CHUNK_SIZE: usize = 16;
 
-#[derive(PartialEq, Eq, Debug, Hash, Clone, Copy)]
+#[derive(PartialEq, Eq, Debug, Hash, Clone, Copy, serde::Serialize, serde::Deserialize)]
 struct Index {
     x: u32,
     y: u32,
@@ -168,6 +169,30 @@ impl<T: Clone> Grid<T> {
     }
 }
 
+
+impl<T:Serialize> Serialize for Grid<T> {
+
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer {
+        Serialize::serialize(&self.chunks, serializer)
+    }
+}
+
+impl<'de, T:Deserialize<'de>> Deserialize<'de> for Grid<T> {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: serde::Deserializer<'de> {
+        let res = HashMap::deserialize(deserializer);
+        match res {
+            Ok(chunks) => return Ok(Self {
+                chunks,
+            }),
+            Err(err) => return Err(err),
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -215,6 +240,40 @@ mod tests {
                 grid.get_mut(p).unwrap().1 = 0;
                 let p2 = grid.get_mut(p).unwrap();
                 assert_eq!(p2, &mut (0, 0));
+            }
+        }
+
+        let bincoded = bincode::serialize(&grid).unwrap();
+        let grid2:Grid<(i32, i32)> = bincode::deserialize(&bincoded).unwrap();
+        for y in -size..size {
+            for x in -size..size {
+                let p = (x, y);
+                let g1 = grid.get(p);
+                let g2 = grid2.get(p);
+                assert_eq!(g1, g2);
+            }
+        }
+    }
+
+    #[test]
+    fn grid_serde_test() {
+        let mut grid = Grid::default() as Grid<(i32, i32)>;
+        let size = 64;
+        for y in -size..size {
+            for x in -size..size {
+                let p = (x, y);
+                grid.insert(p, p);
+            }
+        }
+
+        let bincoded = bincode::serialize(&grid).unwrap();
+        let grid2:Grid<(i32, i32)> = bincode::deserialize(&bincoded).unwrap();
+        for y in -size..size {
+            for x in -size..size {
+                let p = (x, y);
+                let g1 = grid.get(p);
+                let g2 = grid2.get(p);
+                assert_eq!(g1, g2);
             }
         }
     }

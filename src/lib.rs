@@ -77,7 +77,7 @@ impl<T: Clone> Grid<T> {
             Some(chunk) => chunk,
             None => {
                 let chunk = vec![None; CHUNK_SIZE * CHUNK_SIZE];
-                self.chunks.insert(chunk_index.clone(), chunk);
+                self.chunks.insert(chunk_index, chunk);
                 self.chunks.get_mut(&chunk_index).unwrap()
             }
         };
@@ -164,8 +164,7 @@ impl<T: Clone> Grid<T> {
                     dt_y = dt_y + ddt_y - dt;
                 }
             }
-        } else {
-        }
+        } 
     }
 }
 

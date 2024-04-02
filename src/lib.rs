@@ -1,11 +1,9 @@
 use std::collections::HashMap;
-
 use glam::{IVec2, Vec2};
-
 pub const CHUNK_SIZE: usize = 16;
 
 #[derive(PartialEq, Eq, Debug, Hash, Clone, Copy)]
-pub struct Index {
+struct Index {
     x: u32,
     y: u32,
 }
@@ -65,9 +63,11 @@ pub struct Visit<'a, T> {
     pub d:f32
 }
 
+
 impl<T: Clone> Grid<T> {
-    pub fn get(&self, index: impl Into<Index>) -> Option<&T> {
-        let index: Index = index.into();
+    pub fn get(&self, index: impl Into<(i32, i32)>) -> Option<&T> {
+        let index:(i32, i32) = index.into();
+        let index = Index::from(index);
         let chunk_index = index.chunk_index();
         let chunk = self.chunks.get(&chunk_index)?;
         let cell = chunk.get(index.local_index())?;
@@ -75,8 +75,9 @@ impl<T: Clone> Grid<T> {
         Some(cell)
     }
 
-    pub fn get_mut(&mut self, index: impl Into<Index>) -> Option<&mut T> {
-        let index: Index = index.into();
+    pub fn get_mut(&mut self, index: impl Into<(i32, i32)>) -> Option<&mut T> {
+        let index:(i32, i32) = index.into();
+        let index:Index = index.into();
         let chunk_index = index.chunk_index();
         let chunk = self.chunks.get_mut(&chunk_index)?;
         let cell = chunk.get_mut(index.local_index())?;
@@ -84,8 +85,9 @@ impl<T: Clone> Grid<T> {
         Some(cell)
     }
 
-    pub fn insert(&mut self, index: impl Into<Index>, t: T) {
-        let index: Index = index.into();
+    pub fn insert(&mut self, index: impl Into<(i32, i32)>, t: T) {
+        let index:(i32, i32) = index.into();
+        let index:Index = index.into();
         let chunk_index = index.chunk_index();
         let chunk = match self.chunks.get_mut(&chunk_index) {
             Some(chunk) => chunk,

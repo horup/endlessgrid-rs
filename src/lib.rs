@@ -31,10 +31,38 @@ impl Index {
     }
 }
 
+/// A `Chunk` of the `Grid`
+#[derive(Serialize, Deserialize)]
+pub struct Chunk<T> {
+    index:Index,
+    count:u16,
+    inner:Vec<Option<T>>
+}
+
+impl<T:Clone> Default for Chunk<T> {
+    fn default() -> Self {
+        Self { index:(0, 0).into(), count:0, inner: vec![None; CHUNK_SIZE * CHUNK_SIZE] }
+    }
+}
+
+impl<T> Chunk<T> {
+    pub fn get_local(&self, local:usize) -> Option<&Option<T>> {
+        self.inner.get(local)
+    }
+
+    pub fn get_local_mut(&mut self, local:usize) -> Option<&mut Option<T>> {
+        self.inner.get_mut(local)
+    }
+
+    pub fn get(&self, index:(i32, i32)) -> Option<&Option<T>> {
+        None
+    }
+}
+
 /// An endless 2D grid of type `T` implemented using chunks
-#[derive(Default)]
+#[derive(Default, Serialize, Deserialize)]
 pub struct Grid<T> {
-    chunks: HashMap<Index, Vec<Option<T>>>,
+    chunks: HashMap<Index, Chunk<T>>,
 }
 
 /// Struct used by the `cast_ray` for `Grid`
@@ -53,7 +81,7 @@ impl<T: Clone> Grid<T> {
         let index = Index::from(index);
         let chunk_index = index.chunk_index();
         let chunk = self.chunks.get(&chunk_index)?;
-        let cell = chunk.get(index.local_index())?;
+        let cell = chunk.get_local(index.local_index())?;
         let cell = cell.as_ref()?;
         Some(cell)
     }
@@ -64,9 +92,9 @@ impl<T: Clone> Grid<T> {
         let index:Index = index.into();
         let chunk_index = index.chunk_index();
         let chunk = self.chunks.get_mut(&chunk_index)?;
-        let cell = chunk.get_mut(index.local_index())?;
-        let cell = cell.as_mut()?;
-        Some(cell)
+        let cell = chunk.get_local_mut(index.local_index())?;
+        let cell = cell.as_mut();
+        cell
     }
 
     /// Insert `T`
@@ -77,14 +105,20 @@ impl<T: Clone> Grid<T> {
         let chunk = match self.chunks.get_mut(&chunk_index) {
             Some(chunk) => chunk,
             None => {
-                let chunk = vec![None; CHUNK_SIZE * CHUNK_SIZE];
+                let mut chunk = Chunk::default();
+                chunk.index = chunk_index;
                 self.chunks.insert(chunk_index, chunk);
                 self.chunks.get_mut(&chunk_index).unwrap()
             }
         };
-        if let Some(cell) = chunk.get_mut(index.local_index()) {
+        let mut count = chunk.count;
+        if let Some(cell) = chunk.get_local_mut(index.local_index()) {
+            if cell.is_none() {
+                count += 1;
+            }
             *cell = Some(t);
         }
+        chunk.count = count;
     }
 
     /// Perform the A-star algorithm
@@ -169,30 +203,6 @@ impl<T: Clone> Grid<T> {
     }
 }
 
-
-impl<T:Serialize> Serialize for Grid<T> {
-
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: serde::Serializer {
-        Serialize::serialize(&self.chunks, serializer)
-    }
-}
-
-impl<'de, T:Deserialize<'de>> Deserialize<'de> for Grid<T> {
-    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
-    where
-        D: serde::Deserializer<'de> {
-        let res = HashMap::deserialize(deserializer);
-        match res {
-            Ok(chunks) => return Ok(Self {
-                chunks,
-            }),
-            Err(err) => return Err(err),
-        }
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -227,6 +237,12 @@ mod tests {
     }
 
     #[test]
+    fn chunk_test() {
+        let chunk = Chunk::default() as Chunk<i32>;
+        
+    }
+
+    #[test]
     fn grid_test() {
         let mut grid = Grid::default() as Grid<(i32, i32)>;
         let size = 64;
@@ -251,6 +267,18 @@ mod tests {
                 let g1 = grid.get(p);
                 let g2 = grid2.get(p);
                 assert_eq!(g1, g2);
+            }
+        }
+    }
+
+    #[test]
+    fn grid_test2() {
+        let mut grid = Grid::default() as Grid<(i32, i32)>;
+        let size = 64;
+        for y in -size..size {
+            for x in -size..size {
+                let p = (x, y);
+                grid.insert(p, p);
             }
         }
     }

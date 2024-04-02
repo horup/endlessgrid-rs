@@ -13,9 +13,7 @@ env:
 
 jobs:
   build:
-
     runs-on: ubuntu-latest
-
     steps:
     - uses: actions/checkout@v3
     - name: Build
@@ -24,6 +22,12 @@ jobs:
       run: cargo test --verbose
     - name: Run doc
       run: cargo doc
+  
+  upload:
+   uses: actions/upload-pages-artifact@v3.0.1
+   with:
+     # Path of the directory containing the static assets.
+     path: "target/doc"
   deploy:
     name: Deploy
     environment:

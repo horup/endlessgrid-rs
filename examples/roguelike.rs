@@ -156,7 +156,7 @@ async fn main() {
 
             grid.cast_ray(start, end, |x|{
                 tiles.insert(x.index, ());
-                if x.cell.solid {
+                if x.t.solid {
                     return true;
                 }
 

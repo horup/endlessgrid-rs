@@ -1,5 +1,5 @@
 use std::collections::HashMap;
-use glam::{IVec2, Vec2};
+use glam::Vec2;
 pub const CHUNK_SIZE: usize = 16;
 
 #[derive(PartialEq, Eq, Debug, Hash, Clone, Copy)]
@@ -13,18 +13,6 @@ impl From<(i32, i32)> for Index {
             x: (i32::MAX as i64 + 1 + value.0 as i64) as u32,
             y: (i32::MAX as i64 + 1 + value.1 as i64) as u32,
         }
-    }
-}
-impl From<[i32; 2]> for Index {
-    fn from(value: [i32; 2]) -> Self {
-        let tuple = (value[0], value[1]);
-        tuple.into()
-    }
-}
-impl From<IVec2> for Index {
-    fn from(value: IVec2) -> Self {
-        let tuple = (value.x, value.y);
-        tuple.into()
     }
 }
 
@@ -42,29 +30,23 @@ impl Index {
     }
 }
 
-pub struct Ray {
-    pub origin: Vec2,
-    pub dir: Vec2,
-}
-
-/// An endless 2D grid of type `T` implemented using 16x16 chunks
+/// An endless 2D grid of type `T` implemented using chunks
 #[derive(Default)]
 pub struct Grid<T> {
-    pub top_left:IVec2,
-    pub bottom_right:IVec2,
-    pub chunks: HashMap<Index, Vec<Option<T>>>,
+    chunks: HashMap<Index, Vec<Option<T>>>,
 }
 
+/// Struct used by the `cast_ray` for `Grid`
 pub struct Visit<'a, T> {
     pub index:(i32, i32),
-    pub cell:&'a T,
+    pub t:&'a T,
     pub x:f32,
     pub y:f32,
     pub d:f32
 }
 
-
 impl<T: Clone> Grid<T> {
+    /// Gets a immutable reference to `T`
     pub fn get(&self, index: impl Into<(i32, i32)>) -> Option<&T> {
         let index:(i32, i32) = index.into();
         let index = Index::from(index);
@@ -75,6 +57,7 @@ impl<T: Clone> Grid<T> {
         Some(cell)
     }
 
+    /// Gets an mutable reference to `T`
     pub fn get_mut(&mut self, index: impl Into<(i32, i32)>) -> Option<&mut T> {
         let index:(i32, i32) = index.into();
         let index:Index = index.into();
@@ -85,6 +68,7 @@ impl<T: Clone> Grid<T> {
         Some(cell)
     }
 
+    /// Insert `T`
     pub fn insert(&mut self, index: impl Into<(i32, i32)>, t: T) {
         let index:(i32, i32) = index.into();
         let index:Index = index.into();
@@ -102,6 +86,7 @@ impl<T: Clone> Grid<T> {
         }
     }
 
+    /// Perform the A-star algorithm
     pub fn astar<F:Fn((i32, i32), &T)->bool>(&self, start:(i32, i32), end:(i32, i32), visit:F) -> Option<Vec<(i32, i32)>> {
         let p = pathfinding::directed::astar::astar(&start, |(nx, ny)| {
             let (nx, ny) = (*nx, *ny);
@@ -127,6 +112,7 @@ impl<T: Clone> Grid<T> {
         None
     }
 
+    /// Casts a ray from `start` to `end` and call a function `F` for each cell visited
     pub fn cast_ray<F:FnMut(Visit<T>)->bool>(&self, start:Vec2, end:Vec2, mut f:F) {
         fn get_helper(cell_size:f32, pos:f32, dir:f32) -> (f32, f32, f32, f32) {
             let tile = (pos / cell_size).floor();// + 1.0;
@@ -138,7 +124,6 @@ impl<T: Clone> Grid<T> {
             } else {
                 dtile = -1.0;
                 dt = (tile  * cell_size - pos) / dir;
-                // dt = ((tile + 1.0 ) * cell_size - pos) / dir;
             }
     
             (tile, dtile, dt, dtile * cell_size / dir)
@@ -159,7 +144,7 @@ impl<T: Clone> Grid<T> {
                 }
                 let index = (tile_x as i32, tile_y as i32);
                 if let Some(cell) = self.get(index) {
-                    if f(Visit {index, cell, d:t, x:tile_x, y:tile_y }) {
+                    if f(Visit {index, t: cell, d:t, x:tile_x, y:tile_y }) {
                         break;
                     }
                 } else {
@@ -193,26 +178,26 @@ mod tests {
 
     #[test]
     fn infindex() {
-        let p1: Index = [0, 0].into();
+        let p1: Index = (0, 0).into();
         let p2: Index = (0, 0).into();
         assert_eq!(p1, p2);
-        let p1: Index = [5, 3].into();
+        let p1: Index = (5, 3).into();
         let p2: Index = (5, 3).into();
         assert_eq!(p1, p2);
-        let p1: Index = [1, 2].into();
+        let p1: Index = (1, 2).into();
         let p2: Index = (2, 1).into();
         assert_ne!(p1, p2);
-        let p1: Index = [i32::MIN, i32::MAX].into();
+        let p1: Index = (i32::MIN, i32::MAX).into();
         let p2: Index = (i32::MIN, i32::MAX).into();
         assert_eq!(p1, p2);
 
-        let p1: Index = [0, 0].into();
-        let p2: Index = [15, 15].into();
+        let p1: Index = (0, 0).into();
+        let p2: Index = (15, 15).into();
         assert_ne!(p1, p2);
         assert_eq!(p1.chunk_index(), p2.chunk_index());
 
-        let p1: Index = [-7, -7].into();
-        let p2: Index = [-9, -9].into();
+        let p1: Index = (-7, -7).into();
+        let p2: Index = (-9, -9).into();
         assert_ne!(p1, p2);
         assert_eq!(p1.chunk_index(), p2.chunk_index());
     }

@@ -176,7 +176,7 @@ mod tests {
     fn raycast_test() {}
 
     #[test]
-    fn infindex() {
+    fn index_test() {
         let p1: Index = (0, 0).into();
         let p2: Index = (0, 0).into();
         assert_eq!(p1, p2);
@@ -202,7 +202,7 @@ mod tests {
     }
 
     #[test]
-    fn test() {
+    fn grid_test() {
         let mut grid = Grid::default() as Grid<(i32, i32)>;
         let size = 64;
         for y in -size..size {

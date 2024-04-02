@@ -39,7 +39,7 @@ fn load_map(grid:&mut Grid<Tile>, entities:&mut SlotMap<DefaultKey, Entity>) {
                             chunk_pos.1 * tiled::ChunkData::HEIGHT as i32 + y,
                         );
                         let classes = tile.get_tile().unwrap().user_type.clone().unwrap_or_default();
-                        let classes = classes.split(" ").map(|x|(x.to_owned(), ()));
+                        let classes = classes.split(' ').map(|x|(x.to_owned(), ()));
                         let classes:HashMap<String,()> = classes.collect();
                         let mut keys = HashMap::default();
                         if classes.contains_key("player") {
@@ -124,7 +124,7 @@ async fn main() {
     let mut entities = SlotMap::default();
     let mut grid = Grid::default() as Grid<Tile>;
     load_map(&mut grid, &mut entities);
-    let player_entity = entities.iter().filter(|x|x.1.is_player).next().expect("player not ofund").0;
+    let player_entity = entities.iter().find(|x|x.1.is_player).expect("player not ofund").0;
     let tile_size_px = 8.0;
     let tilemap_texture = load_texture("examples/tileset.png").await.unwrap();
     tilemap_texture.set_filter(FilterMode::Nearest);
@@ -160,7 +160,7 @@ async fn main() {
                     return true;
                 }
 
-                return false;
+                false
             });
         }
 

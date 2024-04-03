@@ -57,11 +57,20 @@ impl<T:Clone> Chunk<T> {
         self.inner.get(local)
     }
 
-    pub fn get_local_mut(&mut self, local:usize) -> Option<&mut Option<T>> {
+    pub fn insert(&mut self, local:usize, t:T) {
         if self.inner.len() == 0 {
             self.inner = vec![None; CHUNK_SIZE * CHUNK_SIZE];
+            self.len = 0;
         }
-        self.inner.get_mut(local)
+        if self.inner[local].is_none() {
+            self.len += 1;
+        }
+        self.inner[local] = Some(t);
+    }
+
+    pub fn get_local_mut(&mut self, local:usize) -> Option<&mut T> {
+        let m = self.inner.get_mut(local)?;
+        m.as_mut()
     }
 
     pub fn get(&self, index:(i32, i32)) -> Option<&Option<T>> {
@@ -107,9 +116,7 @@ impl<T: Clone> Grid<T> {
         let index:Index = index.into();
         let chunk_index = index.chunk_index();
         let chunk = self.chunks.get_mut(&chunk_index)?;
-        let cell = chunk.get_local_mut(index.local_index())?;
-        let cell = cell.as_mut();
-        cell
+        chunk.get_local_mut(index.local_index())
     }
 
     /// Insert `T`
@@ -127,12 +134,17 @@ impl<T: Clone> Grid<T> {
             }
         };
         let mut count = chunk.len;
-        if let Some(cell) = chunk.get_local_mut(index.local_index()) {
+       /* if let Some(cell) = chunk.get_local_mut(index.local_index()) {
             if cell.is_none() {
                 count += 1;
             }
             *cell = Some(t);
+        }*/
+        let local = index.local_index();
+        if chunk.get_local(local).is_none() {
+            count += 1;
         }
+        chunk.insert(local, t);
         chunk.len = count;
     }
 
@@ -258,7 +270,14 @@ mod tests {
         let mut chunk = Chunk::default() as Chunk<Test>;
         assert_eq!(chunk.inner.len(), 0);
         assert_eq!(chunk.len(), 0);
-        *chunk.get_local_mut(0).unwrap() = Some(Test);
+        chunk.insert(0, Test);
+        assert_eq!(chunk.inner.len(), CHUNK_SIZE * CHUNK_SIZE);
+        assert_eq!(chunk.len(), 1);
+        chunk.insert(0, Test);
+        assert_eq!(chunk.len(), 1);
+        chunk.insert(1, Test);
+        assert_eq!(chunk.len(), 2);
+        //*chunk.get_local_mut(0).unwrap() = Some(Test);
         //assert_eq!(chunk.inner.len(), CHUNK_SIZE * CHUNK_SIZE);
         //assert_eq!(chunk.len(), 1);
     }

@@ -35,22 +35,32 @@ impl Index {
 #[derive(Serialize, Deserialize)]
 pub struct Chunk<T> {
     index:Index,
-    count:u16,
+    len:u16,
     inner:Vec<Option<T>>
 }
 
 impl<T:Clone> Default for Chunk<T> {
     fn default() -> Self {
-        Self { index:(0, 0).into(), count:0, inner: vec![None; CHUNK_SIZE * CHUNK_SIZE] }
+        Self { index:(0, 0).into(), len:0, inner: Vec::new() }
     }
 }
 
-impl<T> Chunk<T> {
+impl<T:Clone> Chunk<T> {
+    pub fn len(&self) -> usize {
+        self.len as usize
+    }
+    pub fn clear(&mut self) {
+        self.len = 0;
+        self.inner = Vec::default();
+    }
     pub fn get_local(&self, local:usize) -> Option<&Option<T>> {
         self.inner.get(local)
     }
 
     pub fn get_local_mut(&mut self, local:usize) -> Option<&mut Option<T>> {
+        if self.inner.len() == 0 {
+            self.inner = vec![None; CHUNK_SIZE * CHUNK_SIZE];
+        }
         self.inner.get_mut(local)
     }
 
@@ -75,6 +85,11 @@ pub struct Visit<'a, T> {
 }
 
 impl<T: Clone> Grid<T> {
+    pub fn len(&self) -> usize {
+        let mut len = 0;
+        self.chunks.values().for_each(|x|len += x.len());
+        len
+    }
     /// Gets a immutable reference to `T`
     pub fn get(&self, index: impl Into<(i32, i32)>) -> Option<&T> {
         let index:(i32, i32) = index.into();
@@ -111,14 +126,14 @@ impl<T: Clone> Grid<T> {
                 self.chunks.get_mut(&chunk_index).unwrap()
             }
         };
-        let mut count = chunk.count;
+        let mut count = chunk.len;
         if let Some(cell) = chunk.get_local_mut(index.local_index()) {
             if cell.is_none() {
                 count += 1;
             }
             *cell = Some(t);
         }
-        chunk.count = count;
+        chunk.len = count;
     }
 
     /// Perform the A-star algorithm
@@ -238,8 +253,14 @@ mod tests {
 
     #[test]
     fn chunk_test() {
-        let chunk = Chunk::default() as Chunk<i32>;
-        
+        #[derive(Clone)]
+        struct Test;
+        let mut chunk = Chunk::default() as Chunk<Test>;
+        assert_eq!(chunk.inner.len(), 0);
+        assert_eq!(chunk.len(), 0);
+        *chunk.get_local_mut(0).unwrap() = Some(Test);
+        //assert_eq!(chunk.inner.len(), CHUNK_SIZE * CHUNK_SIZE);
+        //assert_eq!(chunk.len(), 1);
     }
 
     #[test]

@@ -277,6 +277,7 @@ mod tests {
         assert_eq!(chunk.len(), 1);
         chunk.insert(1, Test);
         assert_eq!(chunk.len(), 2);
+        assert_eq!(false, true);
         //*chunk.get_local_mut(0).unwrap() = Some(Test);
         //assert_eq!(chunk.inner.len(), CHUNK_SIZE * CHUNK_SIZE);
         //assert_eq!(chunk.len(), 1);

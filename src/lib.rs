@@ -46,17 +46,23 @@ impl<T:Clone> Default for Chunk<T> {
 }
 
 impl<T:Clone> Chunk<T> {
+    /// Get length of the chunk, i.e. how many elements are in the chunk.
     pub fn len(&self) -> usize {
         self.len as usize
     }
+
+    /// Clear all elements from the chunk
     pub fn clear(&mut self) {
         self.len = 0;
         self.inner = Vec::default();
     }
+
+    /// Get element in chunk using local position within the chunk
     pub fn get_local(&self, local:usize) -> Option<&Option<T>> {
         self.inner.get(local)
     }
 
+    /// Insert element into local position
     pub fn insert(&mut self, local:usize, t:T) {
         if self.inner.len() == 0 {
             self.inner = vec![None; CHUNK_SIZE * CHUNK_SIZE];
@@ -68,6 +74,7 @@ impl<T:Clone> Chunk<T> {
         self.inner[local] = Some(t);
     }
 
+    /// Get element in chunk using local position within the psotion
     pub fn get_local_mut(&mut self, local:usize) -> Option<&mut T> {
         let m = self.inner.get_mut(local)?;
         m.as_mut()
@@ -133,19 +140,8 @@ impl<T: Clone> Grid<T> {
                 self.chunks.get_mut(&chunk_index).unwrap()
             }
         };
-        let mut count = chunk.len;
-       /* if let Some(cell) = chunk.get_local_mut(index.local_index()) {
-            if cell.is_none() {
-                count += 1;
-            }
-            *cell = Some(t);
-        }*/
         let local = index.local_index();
-        if chunk.get_local(local).is_none() {
-            count += 1;
-        }
         chunk.insert(local, t);
-        chunk.len = count;
     }
 
     /// Perform the A-star algorithm
@@ -277,9 +273,10 @@ mod tests {
         assert_eq!(chunk.len(), 1);
         chunk.insert(1, Test);
         assert_eq!(chunk.len(), 2);
-        //*chunk.get_local_mut(0).unwrap() = Some(Test);
-        //assert_eq!(chunk.inner.len(), CHUNK_SIZE * CHUNK_SIZE);
-        //assert_eq!(chunk.len(), 1);
+
+        chunk.clear();
+        assert_eq!(chunk.len(), 0);
+        assert_eq!(chunk.inner.len(), 0);
     }
 
     #[test]
@@ -315,12 +312,13 @@ mod tests {
     fn grid_test2() {
         let mut grid = Grid::default() as Grid<(i32, i32)>;
         let size = 64;
-        for y in -size..size {
-            for x in -size..size {
+        for y in 0..size {
+            for x in 0..size {
                 let p = (x, y);
                 grid.insert(p, p);
             }
         }
+        assert_eq!(grid.len(), size as usize * size as usize);
     }
 
     #[test]

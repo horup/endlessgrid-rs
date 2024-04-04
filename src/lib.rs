@@ -1,15 +1,15 @@
-use std::collections::HashMap;
+use std::collections::{hash_map::Values, HashMap};
 use glam::Vec2;
 use serde::{Deserialize, Serialize};
 pub const CHUNK_SIZE: usize = 16;
 
 #[derive(PartialEq, Eq, Debug, Hash, Clone, Copy, serde::Serialize, serde::Deserialize)]
-struct Index {
+pub struct Index {
     x: u32,
     y: u32,
 }
 #[derive(PartialEq, Eq, Debug, Hash, Clone, Copy, serde::Serialize, serde::Deserialize)]
-struct ChunkIndex {
+pub struct ChunkIndex {
     x: u32,
     y: u32,
 }
@@ -108,10 +108,39 @@ impl<T:Clone> Chunk<T> {
         self.inner[local] = Some(t);
     }
 
-    /// Get element in chunk using local position within the psotion
+    /// Get element in chunk using local position within the `chunk`
     pub fn get_local_mut(&mut self, local:usize) -> Option<&mut T> {
         let m = self.inner.get_mut(local)?;
         m.as_mut()
+    }
+}
+
+pub struct ChunkIter<'a, T> {
+    index:usize,
+    top_left:(i32, i32),
+    iter:core::slice::Iter<'a, Option<T>>,
+}
+impl<'a, T> Iterator for ChunkIter<'a, T> {
+    type Item = ((i32, i32), &'a T);
+    fn next(&mut self) -> Option<Self::Item> {
+        let index = (self.top_left.0 + self.index as i32 % CHUNK_SIZE as i32, self.top_left.1 + self.index as i32 / CHUNK_SIZE as i32);
+        self.index += 1;
+        let value = self.iter.next()?;
+        let cell = value.as_ref()?;
+        Some((index, cell))
+    }
+}
+
+impl<'a, T:Clone> IntoIterator for &'a Chunk<T> {
+    type Item = ((i32, i32), &'a T);
+    type IntoIter = ChunkIter<'a, T>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        Self::IntoIter {
+            index:0,
+            iter: self.inner.iter(),
+            top_left: self.top_left()
+        }
     }
 }
 
@@ -119,6 +148,16 @@ impl<T:Clone> Chunk<T> {
 #[derive(Default, Serialize, Deserialize)]
 pub struct Grid<T> {
     chunks: HashMap<ChunkIndex, Chunk<T>>,
+}
+
+impl<'a, T> IntoIterator for &'a Grid<T> {
+    type Item = &'a Chunk<T>;
+
+    type IntoIter = Values<'a, ChunkIndex, Chunk<T>>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.chunks.values()
+    }
 }
 
 /// Struct used by the `Grid::cast_ray`
@@ -415,7 +454,11 @@ mod tests {
             }
         }
 
-        
+        for chunk in &grid {
+            for (p, cell) in chunk {
+                assert_eq!(p, *cell);
+            }
+        }
     }
 
     #[test]

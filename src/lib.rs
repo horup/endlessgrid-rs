@@ -16,6 +16,13 @@ impl From<(i32, i32)> for Index {
         }
     }
 }
+impl From<Index> for (i32, i32) {
+    fn from(value: Index) -> Self {
+        let x = value.x as i64 - i32::MAX as i64 - 1;
+        let y = value.y as i64 - i32::MAX as i64 - 1;
+        (x as i32, y as i32)
+    }
+}
 
 impl Index {
     pub fn chunk_index(&self) -> Index {
@@ -47,11 +54,23 @@ pub struct Chunk<T> {
 
 impl<T:Clone> Default for Chunk<T> {
     fn default() -> Self {
-        Self { index:(0, 0).into(), len:0, inner: Vec::new() }
+        Self { index:Index::from((0, 0)).chunk_index(), len:0, inner: Vec::new() }
     }
 }
 
 impl<T:Clone> Chunk<T> {
+
+    /// Gets the top left index of the chunk
+    pub fn top_left(&self) -> (i32, i32) {
+        self.index.index().into()
+    }
+
+    /// Gets the bottom right index of the chunk
+    pub fn bottom_right(&self) -> (i32, i32) {
+        let p:(i32, i32) = self.index.index().into();
+        (p.0 + CHUNK_SIZE as i32 - 1, p.1 + CHUNK_SIZE as i32 - 1)
+    }
+
     /// Get length of the chunk, i.e. how many elements are in the chunk.
     pub fn len(&self) -> usize {
         self.len as usize
@@ -295,7 +314,15 @@ mod tests {
         let p2 = p1.chunk_index().index();
         assert_eq!(p1, p2);
 
-        
+        let p1 = (1024, 5431);
+        let p2:Index = p1.into();
+        let p2:(i32, i32) = p2.into();
+        assert_eq!(p1, p2);
+
+        let p1 = (-1024, -5431);
+        let p2:Index = p1.into();
+        let p2:(i32, i32) = p2.into();
+        assert_eq!(p1, p2);
     }
 
     #[test]
@@ -312,10 +339,13 @@ mod tests {
         assert_eq!(chunk.len(), 1);
         chunk.insert(1, Test);
         assert_eq!(chunk.len(), 2);
-
         chunk.clear();
         assert_eq!(chunk.len(), 0);
         assert_eq!(chunk.inner.len(), 0);
+
+        let chunk = Chunk::default() as Chunk<Test>;
+        assert_eq!(chunk.top_left(), (0, 0));
+        assert_eq!(chunk.bottom_right(), (CHUNK_SIZE as i32 -1, CHUNK_SIZE as i32 -1));
     }
 
     #[test]
@@ -358,6 +388,20 @@ mod tests {
             }
         }
         assert_eq!(grid.len(), size as usize * size as usize);
+    }
+
+    #[test]
+    fn grid_test3() {
+        let mut grid = Grid::default() as Grid<(i32, i32)>;
+        let size = 64;
+        for y in 0..size {
+            for x in 0..size {
+                let p = (x, y);
+                grid.insert(p, p);
+            }
+        }
+
+        
     }
 
     #[test]

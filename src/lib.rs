@@ -171,7 +171,11 @@ impl<T: Clone> Grid<T> {
     }
 
     /// Casts a ray from `start` to `end` and call a function `F` for each cell visited
-    pub fn cast_ray<F:FnMut(Visit<T>)->bool>(&self, start:Vec2, end:Vec2, mut f:F) {
+    pub fn cast_ray<F:FnMut(Visit<T>)->bool>(&self, start:impl Into<(f32, f32)>, end:impl Into<(f32, f32)>, mut f:F) {
+        let start:(f32, f32) = start.into();
+        let end:(f32, f32) = end.into();
+        let start:Vec2 = start.into();
+        let end:Vec2 = end.into();
         fn get_helper(cell_size:f32, pos:f32, dir:f32) -> (f32, f32, f32, f32) {
             let tile = (pos / cell_size).floor();// + 1.0;
             let dtile;

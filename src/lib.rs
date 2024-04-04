@@ -24,6 +24,12 @@ impl Index {
             y: self.y / CHUNK_SIZE as u32,
         }
     }
+    pub fn index(&self) -> Index {
+        Index {
+            x: self.x * CHUNK_SIZE as u32,
+            y: self.y * CHUNK_SIZE as u32
+        }
+    }
     pub fn local_index(&self) -> usize {
         let x = self.x as usize % CHUNK_SIZE;
         let y = self.y as usize % CHUNK_SIZE;
@@ -281,6 +287,15 @@ mod tests {
         let p2: Index = (-9, -9).into();
         assert_ne!(p1, p2);
         assert_eq!(p1.chunk_index(), p2.chunk_index());
+
+        let p1: Index = (CHUNK_SIZE as i32 * 10, CHUNK_SIZE as i32 * 10).into();
+        let p2 = p1.chunk_index().index();
+        assert_eq!(p1, p2);
+        let p1: Index = (CHUNK_SIZE as i32 * -10, CHUNK_SIZE as i32 * -10).into();
+        let p2 = p1.chunk_index().index();
+        assert_eq!(p1, p2);
+
+        
     }
 
     #[test]

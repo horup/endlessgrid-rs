@@ -145,7 +145,9 @@ impl<T: Clone> Grid<T> {
     }
 
     /// Perform the A-star algorithm
-    pub fn astar<F:Fn((i32, i32), &T)->bool>(&self, start:(i32, i32), end:(i32, i32), visit:F) -> Option<Vec<(i32, i32)>> {
+    pub fn astar<F:Fn((i32, i32), &T)->bool>(&self, start:impl Into<(i32, i32)>, end:impl Into<(i32, i32)>, visit:F) -> Option<Vec<(i32, i32)>> {
+        let start = start.into();
+        let end = end.into();
         let p = pathfinding::directed::astar::astar(&start, |(nx, ny)| {
             let (nx, ny) = (*nx, *ny);
             let mut vec:Vec<((i32, i32), i32)> = Vec::with_capacity(4);
@@ -233,9 +235,6 @@ impl<T: Clone> Grid<T> {
 #[cfg(test)]
 mod tests {
     use super::*;
-
-    #[test]
-    fn raycast_test() {}
 
     #[test]
     fn index_test() {
@@ -346,5 +345,15 @@ mod tests {
                 assert_eq!(g1, g2);
             }
         }
+    }
+
+    #[test]
+    fn raycast_test() {
+
+    }
+
+    #[test]
+    fn astar_test() {
+
     }
 }

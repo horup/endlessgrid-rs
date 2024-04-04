@@ -93,10 +93,16 @@ pub struct Grid<T> {
 
 /// Struct used by the `cast_ray` for `Grid`
 pub struct Visit<'a, T> {
+    /// Current index of the cell being visited
     pub index:(i32, i32),
+
+    /// The cell being visited
     pub t:&'a T,
-    pub x:f32,
-    pub y:f32,
+
+    /// Current position of the ray
+    pub pos:(f32, f32),
+   
+    // Distance traveled by the ray
     pub d:f32
 }
 
@@ -173,6 +179,8 @@ impl<T: Clone> Grid<T> {
     }
 
     /// Casts a ray from `start` to `end` and call a function `F` for each cell visited
+    /// 
+    /// The ray will be traced until `F` returns `true` or untill `end` has been reached
     pub fn cast_ray<F:FnMut(Visit<T>)->bool>(&self, start:impl Into<(f32, f32)>, end:impl Into<(f32, f32)>, mut f:F) {
         let start:(f32, f32) = start.into();
         let end:(f32, f32) = end.into();
@@ -208,7 +216,7 @@ impl<T: Clone> Grid<T> {
                 }
                 let index = (tile_x as i32, tile_y as i32);
                 if let Some(cell) = self.get(index) {
-                    if f(Visit {index, t: cell, d:t, x:tile_x, y:tile_y }) {
+                    if f(Visit {index, t: cell, d:t, pos:(tile_x, tile_y) }) {
                         break;
                     }
                 } else {
@@ -349,7 +357,26 @@ mod tests {
 
     #[test]
     fn raycast_test() {
+        let mut grid = Grid::default() as Grid<bool>;
+        for y in 0..8 {
+            for x in 0..8 {
+                grid.insert((x, y), if x == 4 && y == 4 {true} else {false});
+            }
+        }
+        let mut last_hit = (0, 0);
+        let mut last_pos_before_hit = (0.0, 0.0);
+        grid.cast_ray((0.5, 0.5), (7.5, 7.5), |v| {
+            if *v.t {
+                last_hit = v.index;
+                return true;
+            } 
+            last_pos_before_hit = v.pos;
 
+            return false;
+        });
+
+        assert_eq!(last_hit, (4, 4));
+        assert_eq!(last_pos_before_hit, (3.0, 4.0));
     }
 
     #[test]

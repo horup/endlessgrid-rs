@@ -91,7 +91,7 @@ pub struct Grid<T> {
     chunks: HashMap<Index, Chunk<T>>,
 }
 
-/// Struct used by the `cast_ray` for `Grid`
+/// Struct used by the `Grid::cast_ray`
 pub struct RayVisit<'a, T> {
     /// Current index of the cell being visited
     pub index:(i32, i32),
@@ -106,7 +106,7 @@ pub struct RayVisit<'a, T> {
     pub d:f32
 }
 
-/// Struct used by the `astar` for `Grid`
+/// Struct used by the `Grid::astar`
 pub struct AStarVisit<'a, T> {
     /// Current index of the cell being visited
     pub index:(i32, i32),

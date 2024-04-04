@@ -8,6 +8,12 @@ struct Index {
     x: u32,
     y: u32,
 }
+#[derive(PartialEq, Eq, Debug, Hash, Clone, Copy, serde::Serialize, serde::Deserialize)]
+struct ChunkIndex {
+    x: u32,
+    y: u32,
+}
+
 impl From<(i32, i32)> for Index {
     fn from(value: (i32, i32)) -> Self {
         Self {
@@ -25,8 +31,8 @@ impl From<Index> for (i32, i32) {
 }
 
 impl Index {
-    pub fn chunk_index(&self) -> Index {
-        Index {
+    pub fn chunk_index(&self) -> ChunkIndex {
+        ChunkIndex {
             x: self.x / CHUNK_SIZE as u32,
             y: self.y / CHUNK_SIZE as u32,
         }
@@ -44,10 +50,19 @@ impl Index {
     }
 }
 
+impl ChunkIndex {
+    pub fn index(&self) -> Index {
+        Index {
+            x: self.x * CHUNK_SIZE as u32,
+            y: self.y * CHUNK_SIZE as u32
+        }
+    }
+}
+
 /// A `Chunk` of the `Grid`
 #[derive(Serialize, Deserialize)]
 pub struct Chunk<T> {
-    index:Index,
+    index:ChunkIndex,
     len:u16,
     inner:Vec<Option<T>>
 }
@@ -59,7 +74,6 @@ impl<T:Clone> Default for Chunk<T> {
 }
 
 impl<T:Clone> Chunk<T> {
-
     /// Gets the top left index of the chunk
     pub fn top_left(&self) -> (i32, i32) {
         self.index.index().into()
@@ -113,7 +127,7 @@ impl<T:Clone> Chunk<T> {
 /// An endless 2D grid of type `T` implemented using chunks
 #[derive(Default, Serialize, Deserialize)]
 pub struct Grid<T> {
-    chunks: HashMap<Index, Chunk<T>>,
+    chunks: HashMap<ChunkIndex, Chunk<T>>,
 }
 
 /// Struct used by the `Grid::cast_ray`

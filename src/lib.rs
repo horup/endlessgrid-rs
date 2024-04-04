@@ -3,11 +3,14 @@ use glam::Vec2;
 use serde::{Deserialize, Serialize};
 pub const CHUNK_SIZE: usize = 16;
 
+/// Index used internally to identify an element within a cell
 #[derive(PartialEq, Eq, Debug, Hash, Clone, Copy, serde::Serialize, serde::Deserialize)]
 pub struct Index {
     x: u32,
     y: u32,
 }
+
+/// Index used internally to identify a chunk within a grid
 #[derive(PartialEq, Eq, Debug, Hash, Clone, Copy, serde::Serialize, serde::Deserialize)]
 pub struct ChunkIndex {
     x: u32,

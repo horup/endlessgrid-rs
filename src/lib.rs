@@ -346,6 +346,15 @@ mod tests {
         let chunk = Chunk::default() as Chunk<Test>;
         assert_eq!(chunk.top_left(), (0, 0));
         assert_eq!(chunk.bottom_right(), (CHUNK_SIZE as i32 -1, CHUNK_SIZE as i32 -1));
+
+        let mut chunk = Chunk::default() as Chunk<Test>;
+        let p = (-1024, -1024);
+        let chunk_index = Index::from(p).chunk_index();
+        chunk.index = chunk_index;
+
+        assert_eq!(chunk.top_left(), p);
+        assert_eq!(chunk.bottom_right(), (p.0 + CHUNK_SIZE as i32 - 1, p.1 + CHUNK_SIZE as i32 -1 ));
+        //assert_eq!(chunk.bottom_right(), (CHUNK_SIZE as i32 -1, CHUNK_SIZE as i32 -1));
     }
 
     #[test]

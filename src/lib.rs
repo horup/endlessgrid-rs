@@ -98,7 +98,7 @@ impl<T:Clone> Chunk<T> {
 
     /// Insert element into local position
     pub fn insert(&mut self, local:usize, t:T) {
-        if self.inner.len() == 0 {
+        if self.inner.is_empty() {
             self.inner = vec![None; CHUNK_SIZE * CHUNK_SIZE];
             self.len = 0;
         }
@@ -489,7 +489,7 @@ mod tests {
         let mut grid = Grid::default() as Grid<bool>;
         for y in 0..8 {
             for x in 0..8 {
-                grid.insert((x, y), if x == 4 && y == 4 {true} else {false});
+                grid.insert((x, y), x == 4 && y == 4);
             }
         }
         let mut last_hit = (0, 0);
@@ -501,7 +501,7 @@ mod tests {
             } 
             last_pos_before_hit = v.pos;
 
-            return true;
+            true
         });
 
         assert_eq!(last_hit, (4, 4));
@@ -513,20 +513,20 @@ mod tests {
         let mut grid = Grid::default() as Grid<bool>;
         for y in 0..8 {
             for x in 0..8 {
-                grid.insert((x, y), if x == 4 && y != 7 {true} else {false});
+                grid.insert((x, y), x == 4 && y != 7);
             }
         }
 
-        assert_eq!(*grid.get((4,7)).unwrap(), false);
+        assert!(!(*grid.get((4,7)).unwrap()));
 
         let path = grid.astar((0,0), (7,0), |x|{
             *x.cell
         });
 
-        assert_eq!(path.is_some(), true);
+        assert!(path.is_some());
         let path = path.unwrap();
         assert_eq!(*path.last().unwrap(), (7,0));
         assert_eq!(*path.first().unwrap(), (0,0));
-        assert_eq!(path.iter().find(|x| **x == (4,7)).is_some(), true);
+        assert!(path.iter().any(|x| *x == (4,7)));
     }
 }

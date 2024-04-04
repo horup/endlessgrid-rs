@@ -37,12 +37,7 @@ impl Index {
             y: self.y / CHUNK_SIZE as u32,
         }
     }
-    pub fn index(&self) -> Index {
-        Index {
-            x: self.x * CHUNK_SIZE as u32,
-            y: self.y * CHUNK_SIZE as u32
-        }
-    }
+    
     pub fn local_index(&self) -> usize {
         let x = self.x as usize % CHUNK_SIZE;
         let y = self.y as usize % CHUNK_SIZE;
@@ -117,10 +112,6 @@ impl<T:Clone> Chunk<T> {
     pub fn get_local_mut(&mut self, local:usize) -> Option<&mut T> {
         let m = self.inner.get_mut(local)?;
         m.as_mut()
-    }
-
-    pub fn get(&self, index:(i32, i32)) -> Option<&Option<T>> {
-        None
     }
 }
 

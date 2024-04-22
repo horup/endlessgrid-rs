@@ -126,11 +126,17 @@ pub struct ChunkIter<'a, T> {
 impl<'a, T> Iterator for ChunkIter<'a, T> {
     type Item = ((i32, i32), &'a T);
     fn next(&mut self) -> Option<Self::Item> {
-        let index = (self.top_left.0 + self.index as i32 % CHUNK_SIZE as i32, self.top_left.1 + self.index as i32 / CHUNK_SIZE as i32);
-        self.index += 1;
-        let value = self.iter.next()?;
-        let cell = value.as_ref()?;
-        Some((index, cell))
+        while let Some(next) = self.iter.next() {
+            if let Some(cell) = next {
+                let index = (self.top_left.0 + self.index as i32 % CHUNK_SIZE as i32, self.top_left.1 + self.index as i32 / CHUNK_SIZE as i32);
+                self.index += 1;
+                return Some((index, cell));
+            }
+            self.index += 1;
+            continue;
+        }
+
+        None
     }
 }
 
@@ -407,7 +413,7 @@ mod tests {
     #[test]
     fn grid_test() {
         let mut grid = Grid::default() as Grid<(i32, i32)>;
-        let size = 64;
+        let size = 33;
         for y in -size..size {
             for x in -size..size {
                 let p = (x, y);
@@ -468,6 +474,25 @@ mod tests {
         }
         
         assert_eq!(read, inserted);
+    }
+
+    #[test]
+    fn grid_test4() {
+        let mut grid = Grid::default() as Grid<(i32, i32)>;
+        let values = vec![(14, 0), (-1011,32), (-6654,-213), (5543,123), (65645, 12312), (0, 0)];
+        for v in values.iter() {
+            grid.insert(v.to_owned(), v.to_owned());
+        }
+        
+        let mut count = 0;
+        for chunk in &grid {
+            for cell in chunk {
+                assert_eq!(cell.0.to_owned(), cell.1.to_owned());
+                count += 1;
+            }
+        }
+
+        assert_eq!(count, values.len());
     }
 
     #[test]

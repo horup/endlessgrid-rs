@@ -449,19 +449,25 @@ mod tests {
     #[test]
     fn grid_test3() {
         let mut grid = Grid::default() as Grid<(i32, i32)>;
-        let size = 64;
-        for y in 0..size {
-            for x in 0..size {
+        let size: i32 = 33;
+        let mut inserted = 0;
+        for y in -size..size {
+            for x in -size..size {
                 let p = (x, y);
                 grid.insert(p, p);
+                inserted += 1;
             }
         }
 
+        let mut read = 0;
         for chunk in &grid {
             for (p, cell) in chunk {
                 assert_eq!(p, *cell);
+                read += 1;
             }
         }
+        
+        assert_eq!(read, inserted);
     }
 
     #[test]

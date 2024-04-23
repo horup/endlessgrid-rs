@@ -194,6 +194,7 @@ pub struct AStarVisit<'a, T> {
 }
 
 impl<T: Clone> Grid<T> {
+    /// Gets length of the grid, aka. how many cells there are
     pub fn len(&self) -> usize {
         let mut len = 0;
         self.chunks.values().for_each(|x|len += x.len());
@@ -493,6 +494,7 @@ mod tests {
         }
 
         assert_eq!(count, values.len());
+        assert_eq!(grid.len(), values.len());
     }
 
     #[test]

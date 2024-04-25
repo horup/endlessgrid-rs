@@ -1,4 +1,4 @@
-use std::collections::{hash_map::Values, HashMap};
+use std::collections::{hash_map::{Values, ValuesMut}, HashMap};
 use glam::Vec2;
 use serde::{Deserialize, Serialize};
 pub const CHUNK_SIZE: usize = 16;
@@ -140,6 +140,28 @@ impl<'a, T> Iterator for ChunkIter<'a, T> {
     }
 }
 
+pub struct ChunkIterMut<'a, T> {
+    index:usize,
+    top_left:(i32, i32),
+    iter:core::slice::IterMut<'a, Option<T>>,
+}
+impl<'a, T> Iterator for ChunkIterMut<'a, T> {
+    type Item = ((i32, i32), &'a mut T);
+    fn next(&mut self) -> Option<Self::Item> {
+        while let Some(next) = self.iter.next() {
+            if let Some(cell) = next {
+                let index = (self.top_left.0 + self.index as i32 % CHUNK_SIZE as i32, self.top_left.1 + self.index as i32 / CHUNK_SIZE as i32);
+                self.index += 1;
+                return Some((index, cell));
+            }
+            self.index += 1;
+            continue;
+        }
+
+        None
+    }
+}
+
 impl<'a, T:Clone> IntoIterator for &'a Chunk<T> {
     type Item = ((i32, i32), &'a T);
     type IntoIter = ChunkIter<'a, T>;
@@ -149,6 +171,20 @@ impl<'a, T:Clone> IntoIterator for &'a Chunk<T> {
             index:0,
             iter: self.inner.iter(),
             top_left: self.top_left()
+        }
+    }
+}
+
+impl<'a, T:Clone> IntoIterator for &'a mut Chunk<T> {
+    type Item = ((i32, i32), &'a mut T);
+    type IntoIter = ChunkIterMut<'a, T>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        let top_left = self.top_left();
+        Self::IntoIter {
+            index:0,
+            iter: self.inner.iter_mut(),
+            top_left: top_left
         }
     }
 }
@@ -166,6 +202,17 @@ impl<'a, T> IntoIterator for &'a Grid<T> {
 
     fn into_iter(self) -> Self::IntoIter {
         self.chunks.values()
+    }
+}
+
+
+impl<'a, T> IntoIterator for &'a mut Grid<T> {
+    type Item = &'a mut Chunk<T>;
+
+    type IntoIter = ValuesMut<'a, ChunkIndex, Chunk<T>>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.chunks.values_mut()
     }
 }
 
@@ -473,7 +520,16 @@ mod tests {
                 read += 1;
             }
         }
-        
+        assert_eq!(read, inserted);
+
+        let mut read = 0;
+        for chunk in &mut grid {
+            for (_, cell) in chunk {
+                *cell = Default::default();
+                assert_eq!((0,0), *cell);
+                read += 1;
+            }
+        }
         assert_eq!(read, inserted);
     }
 

@@ -58,7 +58,7 @@ impl ChunkIndex {
 }
 
 /// A `Chunk` of the `Grid`
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Clone)]
 pub struct Chunk<T> {
     index:ChunkIndex,
     len:u16,
@@ -190,7 +190,7 @@ impl<'a, T:Clone> IntoIterator for &'a mut Chunk<T> {
 }
 
 /// An endless 2D grid of type `T` implemented using chunks
-#[derive(Default, Serialize, Deserialize)]
+#[derive(Default, Clone, Serialize, Deserialize)]
 pub struct Grid<T> {
     chunks: HashMap<ChunkIndex, Chunk<T>>,
 }

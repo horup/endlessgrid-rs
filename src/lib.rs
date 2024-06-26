@@ -329,6 +329,10 @@ impl<T: Clone> Grid<T> {
             let tile = (pos / cell_size).floor();// + 1.0;
             let dtile;
             let dt;
+            let mut dir = dir;
+            if dir == 0.0 {
+                dir = 0.00001; // FIXME: avoid divide by zero but can be solved better
+            }
             if dir > 0.0 {
                 dtile = 1.0;
                 dt = ((tile + 1.0) * cell_size - pos) / dir;
